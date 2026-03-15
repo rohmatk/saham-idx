@@ -12,10 +12,10 @@ st.title("Saham IDX - Upload PDF & Ownership Dashboard")
 
 init_db()
 
-tab1, tab2 = st.tabs(["Upload PDF", "Dashboard"])
-
-with tab1:
-    upload_section()
+tab1, tab2 = st.tabs(["Dashboard", "Upload PDF"])
 
 with tab2:
+    upload_section()
+
+with tab1:
     dashboard_section()
