@@ -25,14 +25,17 @@ def dashboard_section():
     issuer_options = ["Semua"] + sorted(df["share_code"].dropna().unique().tolist())
     investor_type_options = ["Semua"] + sorted(df["investor_type"].dropna().unique().tolist())
     local_foreign_options = ["Semua"] + sorted(df["local_foreign"].dropna().unique().tolist())
+    holding_type_options = ["Semua", "Scripless Only", "Scrip Only"]
 
-    f1, f2, f3 = st.columns(3)
+    f1, f2, f3, f4 = st.columns(4)
     with f1:
         selected_code = st.selectbox("Filter kode saham", issuer_options)
     with f2:
         selected_type = st.selectbox("Filter tipe investor", investor_type_options)
     with f3:
         selected_lf = st.selectbox("Filter lokal/asing", local_foreign_options)
+    with f4:
+        selected_holding = st.selectbox("Filter Tipe Holding", holding_type_options)
 
     filtered = df.copy()
 
@@ -42,6 +45,10 @@ def dashboard_section():
         filtered = filtered[filtered["investor_type"] == selected_type]
     if selected_lf != "Semua":
         filtered = filtered[filtered["local_foreign"] == selected_lf]
+    if selected_holding == "Scripless Only":
+        filtered = filtered[filtered["holdings_scripless"] > 0]
+    elif selected_holding == "Scrip Only":
+        filtered = filtered[filtered["holdings_scrip"] > 0]
 
     st.dataframe(filtered, width="stretch")
 
@@ -132,6 +139,28 @@ def dashboard_section():
                 text="total_holding_shares",
             )
             st.plotly_chart(fig_issuers, width="stretch")
+
+        st.subheader("Perbandingan Holdings Scripless vs Scrip")
+        stack_df = (
+            filtered.groupby("share_code", dropna=False)
+            .agg(
+                holdings_scripless=("holdings_scripless", "sum"),
+                holdings_scrip=("holdings_scrip", "sum"),
+            )
+            .reset_index()
+            .assign(total=lambda x: x["holdings_scripless"] + x["holdings_scrip"])
+            .sort_values("total", ascending=False)
+            .head(15)
+        )
+        if not stack_df.empty:
+            fig_stack = px.bar(
+                stack_df,
+                x="share_code",
+                y=["holdings_scripless", "holdings_scrip"],
+                title="Top 15 Issuers: Holdings Scripless vs Scrip",
+                barmode="stack",
+            )
+            st.plotly_chart(fig_stack, width="stretch")
 
         summary_df = (
             filtered.groupby(["share_code", "issuer_name"], dropna=False)
