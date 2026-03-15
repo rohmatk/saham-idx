@@ -62,6 +62,44 @@ def dashboard_section():
             )
             st.plotly_chart(fig, width="stretch")
 
+        st.subheader("Distribusi Tipe Investor")
+        pie_df = (
+            filtered.groupby("investor_type", dropna=False)["total_holding_shares"]
+            .sum()
+            .reset_index()
+            .sort_values("total_holding_shares", ascending=False)
+        )
+        if not pie_df.empty:
+            fig_pie = px.pie(
+                pie_df,
+                names="investor_type",
+                values="total_holding_shares",
+                title="Distribusi Saham berdasarkan Tipe Investor",
+            )
+            st.plotly_chart(fig_pie, width="stretch")
+
+        st.subheader("Investor dengan Kepemilikan di Beberapa Saham")
+        multi_df = (
+            filtered.groupby("investor_name", dropna=False)
+            .agg(
+                num_issuers=("share_code", "nunique"),
+                total_shares=("total_holding_shares", "sum"),
+            )
+            .reset_index()
+            .query("num_issuers > 1")
+            .sort_values("num_issuers", ascending=False)
+            .head(15)
+        )
+        if not multi_df.empty:
+            fig_multi = px.bar(
+                multi_df,
+                x="investor_name",
+                y="num_issuers",
+                title="Top 15 Investor dengan Kepemilikan di Beberapa Saham",
+                text="num_issuers",
+            )
+            st.plotly_chart(fig_multi, width="stretch")
+
         summary_df = (
             filtered.groupby(["share_code", "issuer_name"], dropna=False)
             .agg(
