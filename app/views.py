@@ -97,8 +97,41 @@ def dashboard_section():
                 y="num_issuers",
                 title="Top 15 Investor dengan Kepemilikan di Beberapa Saham",
                 text="num_issuers",
+                color="total_shares",
+                color_continuous_scale="Blues",
             )
             st.plotly_chart(fig_multi, width="stretch")
+
+        st.subheader("Hubungan Holdings vs Persentase")
+        scatter_df = filtered[["total_holding_shares", "percentage", "investor_type", "share_code"]].dropna()
+        if not scatter_df.empty:
+            fig_scatter = px.scatter(
+                scatter_df,
+                x="total_holding_shares",
+                y="percentage",
+                color="share_code",
+                title="Scatter Plot: Total Holdings vs Persentase",
+                log_x=True,
+            )
+            st.plotly_chart(fig_scatter, width="stretch")
+
+        st.subheader("Top Issuers by Total Holdings")
+        issuers_df = (
+            filtered.groupby("share_code", dropna=False)["total_holding_shares"]
+            .sum()
+            .reset_index()
+            .sort_values("total_holding_shares", ascending=False)
+            .head(15)
+        )
+        if not issuers_df.empty:
+            fig_issuers = px.bar(
+                issuers_df,
+                x="share_code",
+                y="total_holding_shares",
+                title="Top 15 Issuers by Total Holdings",
+                text="total_holding_shares",
+            )
+            st.plotly_chart(fig_issuers, width="stretch")
 
         summary_df = (
             filtered.groupby(["share_code", "issuer_name"], dropna=False)
