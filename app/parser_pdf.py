@@ -47,6 +47,18 @@ def _load_ticker_map():
 def get_ticker_map():
     return _load_ticker_map()
 
+def parse_stock_summary(file_path):
+    df = pd.read_csv(file_path, sep='|', dtype=str, encoding='latin1')
+    df.columns = df.columns.str.strip()
+    df['Date'] = pd.to_datetime(df['Date'], format='%d-%b-%Y', errors='coerce')
+    df['Local (%)'] = pd.to_numeric(df['Local (%)'], errors='coerce')
+    df['Foreign (%)'] = pd.to_numeric(df['Foreign (%)'], errors='coerce')
+    df['Total (%)'] = pd.to_numeric(df['Total (%)'], errors='coerce')
+    df['Closing Price'] = pd.to_numeric(df['Closing Price'], errors='coerce')
+    df['Num. of Sec'] = pd.to_numeric(df['Num. of Sec'], errors='coerce')
+    df['Total Scripless'] = pd.to_numeric(df['Total Scripless'], errors='coerce')
+    return df
+
 INVESTOR_TYPE_SET = {"CP", "ID", "IS", "IB", "MF", "OT", "PF", "SC"}
 LOCAL_FOREIGN_SET = {"D", "F"}
 
@@ -196,7 +208,7 @@ def parse_line(line: str):
         share_code = get_ticker_map().get(issuer_name.strip().upper(), share_code)
 
     return {
-        "snapshot_date": pd.to_datetime(snapshot_date, format="%d-%b-%Y", errors="coerce").date(),
+        "snapshot_date": pd.to_datetime(snapshot_date, format="%d-%b-%Y", errors="coerce").date() if snapshot_date else None,
         "share_code": share_code,
         "issuer_name": issuer_name,
         "investor_name": investor_name,
@@ -252,6 +264,6 @@ def parse_pdf_to_dataframe(uploaded_file, source_file_name: str) -> pd.DataFrame
     for col in text_cols:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip()
-            df[col] = df[col].replace({"None": None, "nan": None, "": None})
+            df[col] = df[col].mask(df[col].isin(["None", "nan", ""]), None)
 
     return df

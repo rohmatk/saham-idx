@@ -227,3 +227,30 @@ def load_data(limit: int = 5000):
 
 def clear_cache():
     load_data.clear()
+
+
+def load_stock_summary(df):
+    engine = get_engine()
+    try:
+        schema = st.secrets["app"]["schema"]
+    except KeyError:
+        schema = "public"
+    table = "stock_summary"
+    df.to_sql(table, engine, if_exists='replace', index=False)
+    print(f"Loaded {len(df)} rows to {table}")
+
+
+@st.cache_data(ttl=600)
+def load_stock_data():
+    engine = get_engine()
+    try:
+        schema = st.secrets["app"]["schema"]
+    except KeyError:
+        schema = "public"
+    table = "stock_summary"
+    query = text(f"SELECT * FROM {schema}.{table}")
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn)
+    # Normalize column names
+    df.columns = df.columns.str.lower().str.replace(' ', '_').str.replace('(', '').str.replace(')', '').str.replace('.', '')
+    return df
