@@ -96,9 +96,18 @@ def _migrate_table_schema(engine, schema, table):
 
 
 def init_db():
+    try:
+        schema = st.secrets["app"]["schema"]
+        table = st.secrets["app"]["table"]
+    except KeyError:
+        # Fallback to loading from file for local development
+        import toml
+        with open('.streamlit/secrets.toml', 'r') as f:
+            secrets = toml.load(f)
+        schema = secrets["app"]["schema"]
+        table = secrets["app"]["table"]
+
     engine = get_engine()
-    schema = st.secrets["app"]["schema"]
-    table = st.secrets["app"]["table"]
 
     ddl = f"""
     CREATE SCHEMA IF NOT EXISTS {schema};
