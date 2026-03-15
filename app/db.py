@@ -163,8 +163,12 @@ def _fill_missing_share_code(df: pd.DataFrame) -> pd.DataFrame:
 
 def replace_snapshot(df: pd.DataFrame, source_file: str, snapshot_date):
     engine = get_engine()
-    schema = st.secrets["app"]["schema"]
-    table = st.secrets["app"]["table"]
+    try:
+        schema = st.secrets["app"]["schema"]
+        table = st.secrets["app"]["table"]
+    except KeyError:
+        schema = "public"
+        table = "shareholders"
 
     df = _fill_missing_share_code(df)
 
@@ -191,8 +195,12 @@ def replace_snapshot(df: pd.DataFrame, source_file: str, snapshot_date):
 @st.cache_data(ttl=600)
 def load_data(limit: int = 5000):
     engine = get_engine()
-    schema = st.secrets["app"]["schema"]
-    table = st.secrets["app"]["table"]
+    try:
+        schema = st.secrets["app"]["schema"]
+        table = st.secrets["app"]["table"]
+    except KeyError:
+        schema = "public"
+        table = "shareholders"
 
     query = text(f"SELECT * FROM {schema}.{table} LIMIT :limit")
 
