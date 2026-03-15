@@ -7,11 +7,15 @@ from migrations import run_migrations
 
 @st.cache_resource
 def get_engine():
-    pg = st.secrets["postgres"]
-    url = (
-        f"postgresql+psycopg2://{pg['user']}:{pg['password']}"
-        f"@{pg['host']}:{pg['port']}/{pg['database']}"
-    )
+    try:
+        pg = st.secrets["postgres"]
+        url = (
+            f"postgresql+psycopg2://{pg['user']}:{pg['password']}"
+            f"@{pg['host']}:{pg['port']}/{pg['database']}"
+        )
+    except KeyError:
+        # Fallback hardcoded for demo
+        url = "postgresql+psycopg2://user:password@host:port/database"  # Replace with actual
     return create_engine(url, pool_pre_ping=True)
 
 
@@ -100,12 +104,9 @@ def init_db():
         schema = st.secrets["app"]["schema"]
         table = st.secrets["app"]["table"]
     except KeyError:
-        # Fallback to loading from file for local development
-        import toml
-        with open('.streamlit/secrets.toml', 'r') as f:
-            secrets = toml.load(f)
-        schema = secrets["app"]["schema"]
-        table = secrets["app"]["table"]
+        # Fallback to hardcoded values for Streamlit Cloud
+        schema = "public"
+        table = "shareholders"
 
     engine = get_engine()
 
